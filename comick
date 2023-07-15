@@ -1,7 +1,12 @@
 #!/bin/bash
 # Run delete history after fresh install to get history working
 
-dependencies="aria2c curl jq fzf zathura"
+case "$(uname -a)" in 
+    *Darwin*) viewer="preview" ;;
+    *) viewer="mpv" ;;
+esac
+
+dependencies="aria2c curl jq fzf $viewer"
 for dependency in $dependencies; do
     command -v "$dependency" >/dev/null || { echo "$dependency not found"; exit; }
 done
@@ -79,6 +84,6 @@ while true; do
 
   DownloadChapter
   SaveHistory
-  zathura "$folder"; rm -r "$folder"
+  viewer "$folder"; rm -r "$folder"
   input=$(printf "next\nreread\nprevious\nselect\nsearch\nquit" | fzf --reverse --prompt='Reading '"$title"': ')
 done

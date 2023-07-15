@@ -12,6 +12,7 @@ This script is tested only on my personal computer which runs Linux. This script
 ## Installation
 ```sh
 curl https://raw.githubusercontent.com/devank1234/comick/main/comick
+chmod u+x comick
 ```
 **you must install all dependencies for the script to work**
 
@@ -21,4 +22,4 @@ curl https://raw.githubusercontent.com/devank1234/comick/main/comick
 - curl
 - jq
 - fzf
-- zathura (document viewer)
+- zathura (document viewer) or preview (on MacOS)

@@ -1,5 +1,5 @@
 # comick
-Browse and read manga from the command line
+Browse and read manga from the command line. This tool scrapes [comick](https://comick.app).
 
 ## Index
 - [Bugs](#Bugs)

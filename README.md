@@ -2,9 +2,9 @@
 Browse and read manga from the command line
 
 ## Index
-- [Bugs] (#Bugs)
-- [Installation] (#Installation)
-- [Dependencies] (#Dependencies)
+- [Bugs](#Bugs)
+- [Installation](#Installation)
+- [Dependencies](#Dependencies)
 
 ## Bugs
 This script is tested only on my personal computer which runs Linux. This script should work on MacOS.

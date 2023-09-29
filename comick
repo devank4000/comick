@@ -3,7 +3,7 @@
 
 case "$(uname -a)" in 
     *Darwin*) viewer="preview" ;;
-    *) viewer="mpv" ;;
+    *Linux*) viewer="zathura" ;;
 esac
 
 dependencies="aria2c curl jq fzf $viewer"

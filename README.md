@@ -7,7 +7,7 @@ Browse and read manga from the command line. This tool scrapes [comick](https://
 - [Dependencies](#Dependencies)
 
 ## Bugs
-This script is tested only on my personal computer which runs Linux. This script should work on MacOS.
+This script is tested only on my personal computer which runs Linux.
 
 ## Installation
 ```sh
@@ -22,4 +22,4 @@ chmod u+x comick
 - curl
 - jq
 - fzf
-- zathura (document viewer) or preview (on MacOS)
+- zathura (document viewer)

@@ -11,7 +11,7 @@ This script is tested only on my personal computer which runs Linux.
 
 ## Installation
 ```sh
-curl https://raw.githubusercontent.com/devank1234/comick/main/comick
+curl https://raw.githubusercontent.com/devank4000/comick/main/comick
 chmod u+x comick
 ```
 **you must install all dependencies for the script to work**

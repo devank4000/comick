@@ -3,82 +3,82 @@
 
 dependencies="aria2c curl jq fzf $viewer"
 for dependency in $dependencies; do
-    command -v "$dependency" >/dev/null || { echo "$dependency not found"; exit; }
+	command -v "$dependency" >/dev/null || { echo "$dependency not found"; exit; }
 done
 
 API_BASE="https://api.comick.fun"
 HIST_FILE="$HOME/.cache/comick_hist_file.json"
 
 SearchComic() {
-  read -rp "Search comic: " query
-  local query=${query// /%20}
-  local request_url="$API_BASE/v1.0/search/?page=1&type=comic&q=$query"
-  local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
-    | jq -r '.[] | "\(.title)\t\(.hid)"'\
-    | fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
-  comicid=${selection##*$'\t'}
+	read -rp "Search comic: " query
+	local query=${query// /%20}
+	local request_url="$API_BASE/v1.0/search/?page=1&type=comic&q=$query"
+	local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
+		| jq -r '.[] | "\(.title)\t\(.hid)"'\
+		| fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
+	comicid=${selection##*$'\t'}
 }
 
 SelectChapter() {
-  # See https://en.wikipedia.org/wiki/Language_code for changing the language
-  # Change the limit if chapter loading is too slow
-  local request_url="$API_BASE/comic/$comicid/chapters?lang=en&limit=3000&chap-order=0"
-  local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
-    | jq -r '.chapters[] | "Ch.\(.chap) \(.title) [\(.group_name[0])]\t\(.hid)"'\
-    | fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select chapter:')
-  chapterid=${selection##*$'\t'}
+	# See https://en.wikipedia.org/wiki/Language_code for changing the language
+	# Change the limit if chapter loading is too slow
+	local request_url="$API_BASE/comic/$comicid/chapters?lang=en&limit=3000&chap-order=0"
+	local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
+		| jq -r '.chapters[] | "Ch.\(.chap) \(.title) [\(.group_name[0])]\t\(.hid)"'\
+		| fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select chapter:')
+	chapterid=${selection##*$'\t'}
 }
 
 LatestChapters() {
-  local request_url="$API_BASE/chapter/?lang=en&page=1&order=$1"
-  local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
-    | jq -r '.[] | "\(.md_comics.title) Ch.\(.chap)\t\(.md_comics.hid)\t\(.hid)"'\
-    | fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
-  local selection=${selection#*$'\t'}
-  chapterid=${selection#*$'\t'}
-  comicid=${selection%$'\t'*}
+	local request_url="$API_BASE/chapter/?lang=en&page=1&order=$1"
+	local selection=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url"\
+		| jq -r '.[] | "\(.md_comics.title) Ch.\(.chap)\t\(.md_comics.hid)\t\(.hid)"'\
+		| fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
+	local selection=${selection#*$'\t'}
+	chapterid=${selection#*$'\t'}
+	comicid=${selection%$'\t'*}
 }
 
 DownloadChapter() {
-  local request_url="$API_BASE/chapter/$chapterid"
-  result=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url")
-  local links=$(jq -r '"https://meo.comick.pictures/\(.chapter.md_images[].b2key)"' <<< "$result")
-  local b2keys=$(jq -r '.chapter.md_images[].b2key' <<< "$result")
-  title=$(jq -r '"\(.chapter.md_comics.title) Ch.\(.chapter.chap)"' <<< "$result")
+	local request_url="$API_BASE/chapter/$chapterid"
+	result=$(curl -sA "Mozilla/5.0 (Windows NT 10.0; rv:112.0) Gecko/20100101 Firefox/112.0" "$request_url")
+	local links=$(jq -r '"https://meo.comick.pictures/\(.chapter.md_images[].b2key)"' <<< "$result")
+	local b2keys=$(jq -r '.chapter.md_images[].b2key' <<< "$result")
+	title=$(jq -r '"\(.chapter.md_comics.title) Ch.\(.chapter.chap)"' <<< "$result")
 
-  folder=$(mktemp -d)
-  aria2c -Z $links -d "$folder" --async-dns=false > /dev/null
-  local i=1; while IFS= read -r file; do
-    mv "$folder/$file" "$folder/$(printf "%04d" "$i").${file##*.}"
-    ((i=i+1))
-  done <<< "$b2keys"
+	folder=$(mktemp -d)
+	aria2c -Z $links -d "$folder" --async-dns=false > /dev/null
+	local i=1; while IFS= read -r file; do
+		mv "$folder/$file" "$folder/$(printf "%04d" "$i").${file##*.}"
+		((i=i+1))
+	done <<< "$b2keys"
 }
 
 SaveHistory() {
-  local entry=$(jq '{ (.chapter.md_comics.title): .chapter.hid }' <<< "$result")
-  local history=$(jq ' . + '"$entry" "$HIST_FILE")
-  echo "$history" > "$HIST_FILE"
+	local entry=$(jq '{ (.chapter.md_comics.title): .chapter.hid }' <<< "$result")
+	local history=$(jq ' . + '"$entry" "$HIST_FILE")
+	[ -n "$history" ] && echo "$history" > "$HIST_FILE"
 }
 
 while true; do
-    case "$input" in
-        search) SearchComic ; SelectChapter ;;
-        continue) 
-            chapterid=$(jq -r 'to_entries[] | "\(.key)\t\(.value)"' "$HIST_FILE"\
-                | fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
-            chapterid=${chapterid##*$'\t'} ;;
-        hot|new) LatestChapters "$input" ;;
-        quit) exit ;;
-        next) chapterid=$(jq -r '.next.hid?' <<< "$result") ;;
-        previous) chapterid=$(jq -r '.prev.hid?' <<< "$result") ;;
-        select) SelectChapter ;;
-        'clear history') echo "{}" > "$HIST_FILE";;
-    esac
+	case "$input" in
+		search) SearchComic ; SelectChapter ;;
+		continue) 
+			chapterid=$(jq -r 'to_entries[] | "\(.key)\t\(.value)"' "$HIST_FILE"\
+				| fzf --reverse --with-nth=1 --delimiter='\t' --prompt='Select comic:')
+			chapterid=${chapterid##*$'\t'} ;;
+		hot|new) LatestChapters "$input" ;;
+		quit) exit ;;
+		next) chapterid=$(jq -r '.next.hid?' <<< "$result") ;;
+		previous) chapterid=$(jq -r '.prev.hid?' <<< "$result") ;;
+		select) SelectChapter ;;
+		'clear history') echo "{}" > "$HIST_FILE";;
+	esac
 
-  [ -z "$chapterid" ] && { input=$(printf "search\ncontinue\nhot\nnew\nclear history\nquit" | fzf --reverse --prompt='Select option: '); continue; }
+	[ -z "$chapterid" -o "$chapterid" = "null" ] && { input=$(printf "search\ncontinue\nhot\nnew\nclear history\nquit" | fzf --reverse --prompt='Select option: '); continue; }
 
-  DownloadChapter
-  SaveHistory
-  zathura "$folder"; rm -r "$folder"
-  input=$(printf "next\nreread\nprevious\nselect\nsearch\nquit" | fzf --reverse --prompt='Reading '"$title"': ')
+	DownloadChapter
+	SaveHistory
+	zathura "$folder"; rm -r "$folder"
+	input=$(printf "next\nreread\nprevious\nselect\nsearch\nquit" | fzf --reverse --prompt='Reading '"$title"': ')
 done
